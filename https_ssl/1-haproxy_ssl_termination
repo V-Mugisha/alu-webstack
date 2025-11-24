@@ -33,12 +33,27 @@ defaults
         errorfile 503 /etc/haproxy/errors/503.http
         errorfile 504 /etc/haproxy/errors/504.http
 
-frontend lb-frontend
-        bind *:80
-        bind *:443 ssl crt /etc/letsencrypt/live/www.victorms.tech/my_cert.pem
-        mode http
-        default_backend lb-backend
-backend lb-backend
-        balance roundrobin
-        server 6892-web-01 107.29.79.99:80 check
-        server 6892-web-02 44.201.120.55:80 check
+# ================================
+# # HTTP → HTTPS REDIRECT (PORT 80)
+# # ===============================
+frontend http_frontend
+    bind *:80
+    mode http
+    redirect scheme https code 301 if !{ ssl_fc }
+
+# ================================
+# # HTTPS FRONTEND WITH SSL
+# # ==============================
+frontend https_frontend
+    bind *:443 ssl crt /etc/haproxy/certs/www.victorms.tech.pem
+    mode http
+    default_backend web_backend
+
+# ================================
+# # BACKEND SERVERS (HTTP ONLY)
+# # Must return “Holberton School”
+# # ===============================
+backend web_backend
+    balance roundrobin
+    server 6892-web-01 107.21.79.99:80 check
+    server 6892-web-02 44.201.120.55:80 check
